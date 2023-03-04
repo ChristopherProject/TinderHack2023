@@ -42,6 +42,41 @@ public final class AdmirerUtil {
         return admirer;
     }
 
+
+    public static List<String> getYourMatchIDs( int count ) {
+        List<String> ids = new ArrayList<>();
+        try {
+            final URL url = new URL("https://api.gotinder.com/v2/matches?locale=it&count=" + count);// optional parameters "&message=0&is_tinder_u=false");
+            final HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("content-type", "application/json");
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13; LM-X420) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.5304.141 Mobile Safari/537.36");
+            connection.setRequestProperty("X-Auth-Token", Storage.XAUTH_TOKEN);
+            connection.setRequestProperty("platform", "android");
+
+            if (connection.getResponseCode() == 200) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                StringBuilder stringBuilder = new StringBuilder();
+                String strCurrentLine;
+                while ((strCurrentLine = br.readLine()) != null) {
+                    stringBuilder.append(strCurrentLine);
+                }
+                final String data = stringBuilder.toString();
+                JSONArray jsonArray = new JSONObject(data).getJSONObject("data").getJSONArray("matches");
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject json = jsonArray.getJSONObject(i);
+                    ids.add(json.getString("_id"));
+                }
+            } else {
+                System.out.println("Bad Request! Code -> " + connection.getResponseCode());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ids;
+    }
+
+
     private static List<JSONObject> getWhoLikesYou() {
         List<JSONObject> list = new ArrayList<>();
         try {

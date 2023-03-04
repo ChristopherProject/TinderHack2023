@@ -5,6 +5,7 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +32,39 @@ public final class UsersUtil {
             e.printStackTrace();
         }
         return "";
+    }
+
+    public static String sendMessage( String matchID, String message ) {
+        try {
+            URL url = new URL("https://api.gotinder.com/user/matches/" + matchID + "?locale=it");
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("POST");
+
+            con.setRequestProperty("content-type", "application/json");
+            con.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13; LM-X420) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.5304.141 Mobile Safari/537.36");
+            con.setRequestProperty("X-Auth-Token", Storage.XAUTH_TOKEN);
+            con.setRequestProperty("platform", "android");
+
+            String body = new StringBuilder().append("{\"message\": \"").append(message).append("\"}").toString();
+            con.setDoOutput(true);
+            OutputStream os = con.getOutputStream();
+            os.write(body.getBytes());
+            os.flush();
+            os.close();
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuilder response = new StringBuilder();
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+            return response.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 
