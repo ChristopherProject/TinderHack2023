@@ -24,7 +24,7 @@
 
 1) (your_host)/api/decision (this is for sending like or dislike)
 2) (your_host)/api/search (show single girl or a girls [you can specify range])
-3) (your_host)/api/admirers (show who likes you in jsonarray)
+3) (your_host)/api/admirers (show who likes you with user_id in jsonarray)
 
 # Note:
    Tinder have limits for the mans for example:
