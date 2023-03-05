@@ -9,6 +9,10 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 
 public final class UsersUtil {
@@ -67,6 +71,67 @@ public final class UsersUtil {
         return null;
     }
 
+    private static Instant getWhenRefilYourLikes() {
+        try {
+            URL url = new URL("https://api.gotinder.com/v2/profile?locale=it&include=likes");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13; LM-X420) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.5304.141 Mobile Safari/537.36");
+            conn.setRequestProperty("X-Auth-Token", Storage.XAUTH_TOKEN);
+            conn.setRequestProperty("platform", "android");
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode != 200) {
+                throw new RuntimeException("this request has been failed, response code: " + responseCode);
+            } else {
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder stringBuilder = new StringBuilder();
+                String strCurrentLine;
+                while ((strCurrentLine = br.readLine()) != null) {
+                    stringBuilder.append(strCurrentLine);
+                }
+                final String data = stringBuilder.toString();
+                long rateLimitUntil = new JSONObject(data).getJSONObject("data").getJSONObject("likes").getLong("rate_limited_until");
+                Instant instant = Instant.ofEpochMilli(rateLimitUntil);
+                return instant;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private static int getNumberOfLike() {
+        try {
+            URL url = new URL("https://api.gotinder.com/v2/profile?locale=it&include=likes");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 13; LM-X420) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.5304.141 Mobile Safari/537.36");
+            conn.setRequestProperty("X-Auth-Token", Storage.XAUTH_TOKEN);
+            conn.setRequestProperty("platform", "android");
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode != 200) {
+                throw new RuntimeException("this request has been failed, response code: " + responseCode);
+            } else {
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder stringBuilder = new StringBuilder();
+                String strCurrentLine;
+                while ((strCurrentLine = br.readLine()) != null) {
+                    stringBuilder.append(strCurrentLine);
+                }
+                final String data = stringBuilder.toString();
+
+                return new JSONObject(data).getJSONObject("data").getJSONObject("likes").getInt("likes_remaining");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
 
     public static JSONObject sendLikeOrDislike( String like_or_pass, String id ) {
         try {
@@ -88,15 +153,31 @@ public final class UsersUtil {
                 }
                 final String data = stringBuilder.toString();
                 return new JSONObject(data);
-               // System.out.println("Likes Remaining For Today: " + jsonObject.getInt("likes_remaining"));
-            } else {
-               // System.out.println("Bad Request! Code -> " + connection.getResponseCode());
             }
-        } catch (Exception e) {
-            //e.printStackTrace();
+        } catch (Exception ignored) {
         }
         return new JSONObject();
     }
 
-
+    public static JSONObject getLimitationsForMan() {
+        String jsonPenality;
+        final int number = getNumberOfLike();
+        if (number == 0) {
+            Instant refilTime = getWhenRefilYourLikes();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy hh:mm:ss");
+            assert refilTime != null;
+            String formattedDate = formatter.format(refilTime.atZone(ZoneId.systemDefault()));
+            Instant now = Instant.now();
+            Duration duration = Duration.between(now, refilTime);
+            long seconds = Math.abs(duration.getSeconds());
+            long hours = seconds / 3600;
+            long minutes = (seconds % 3600) / 60;
+            long remainingSeconds = seconds % 60;
+            String durationStr = String.format("%02d:%02d:%02d", hours, minutes, remainingSeconds);
+            jsonPenality = "{\n" + "   \"refilDate\": \"" + formattedDate + "\",\n" + "   \"timeRemaining\": \"" + durationStr + "\"\n" + "}";
+        } else {
+            jsonPenality = "{\n" + "   \"number_of_likes_remaining\": " + number + "\n" + "}";
+        }
+        return (new JSONObject(jsonPenality));
+    }
 }

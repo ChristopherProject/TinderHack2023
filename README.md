@@ -27,6 +27,7 @@
 3) (your_host)/api/admirers (show who likes you with user_id in jsonarray)
 4) (your_host)/api/sendMessage (this is for sending message to your match)
 5) (your_host)/api/getMatchs (show list of your matchs id)
+6) (your_host)/api/getManLimitations (show your penality limitations with penality info if you are man)
 
 # Note:
    Tinder have limits for the mans for example:
